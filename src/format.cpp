@@ -13,10 +13,10 @@ string Format::ElapsedTime(long seconds) {
   long minutes = (seconds % 3600) / 60;
   long new_seconds = (seconds % 3600) % 60;
   string time;
-  if(hours <= 9) { time = "0" + hours; }
-  else { time = hours; }
-  if(minutes <= 9) { time += ":0" + minutes; }
-  else { time += ":" + hours; }
-  if(new_seconds <= 9) { time += ":0" + new_seconds; }
-  else { time += ":" + new_seconds; }
-  return string(); }
+  if(hours <= 9) { time = "0" + std::to_string(hours); }
+  else { time = std::to_string(hours); }
+  if(minutes <= 9) { time += ":0" + std::to_string(minutes); }
+  else { time += ":" + std::to_string(minutes); }
+  if(new_seconds <= 9) { time += ":0" + std::to_string(new_seconds); }
+  else { time += ":" + std::to_string(new_seconds); }
+  return time; }
