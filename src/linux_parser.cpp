@@ -261,9 +261,10 @@ string LinuxParser::Ram(int pid) {
   string returnValue;
   std::ifstream filestream(kProcDirectory + to_string(pid) + kStatusFilename);
   if(filestream.is_open()) {
-    std::getline(filestream, line);
-    std::istringstream linestream(line);
-    linestream >> VmSize >> returnValue;
+    while(std::getline(filestream, line)) {
+      std::istringstream linestream(line);
+      linestream >> VmSize >> returnValue;
+    }
   }
   return returnValue;
 }
@@ -271,9 +272,7 @@ string LinuxParser::Ram(int pid) {
 // TODO: Read and return the user ID associated with a process
 // REMOVE: [[maybe_unused]] once you define the function
 string LinuxParser::Uid(int pid) {
-  string line;
-  string key;
-  string uid;
+  string line, key, uid;
   std::ifstream filestream(kProcDirectory + to_string(pid) + kStatusFilename);
   if(filestream.is_open()) {
   	std::getline(filestream, line);
@@ -286,17 +285,23 @@ string LinuxParser::Uid(int pid) {
 // TODO: Read and return the user associated with a process
 // REMOVE: [[maybe_unused]] once you define the function
 string LinuxParser::User(int pid) { 
-  string line;
-  string uid = LinuxParser::Uid(pid);
-  string username;
-  string search = ":x:" + uid;
-  std::ifstream filestream(kProcDirectory + kPasswordPath);
-  if(filestream.is_open()) {
-    std::getline(filestream, line);
-    auto position = line.find(search);
-    username = line.substr(0, position - 1);
+  string line, key, value, x, username{};
+  bool found{false};
+  string pidUid = Uid(pid);
+  std::ifstream filestream(kPasswordPath);
+  if (filestream.is_open()) {
+    while (std::getline(filestream, line) && !found) {
+      std::replace(line.begin(), line.end(), ':', ' ');
+      std::istringstream linestream(line);
+      linestream >> key >> x >> value; 
+      if (value == pidUid) {
+        username = key;
+        found = true;       
+      }
+    }
   }
-  return username;
+  filestream.close();
+  return username; 
 }
 
 // TODO: Read and return the uptime of a process
@@ -312,5 +317,5 @@ long LinuxParser::UpTime(int pid) {
       linestream >> uptime;
     }
   }
-  return uptime / sysconf(_SC_CLK_TCK);
+  return UpTime() - (uptime / sysconf(_SC_CLK_TCK));
 }
