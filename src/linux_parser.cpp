@@ -155,25 +155,30 @@ long LinuxParser::ActiveJiffies() {
   float jiffies = 0;
   std::ifstream filestream(kProcDirectory + kStatFilename);
   if(filestream.is_open()) {
-  	std::getline(filestream, line);
-  	std::istringstream linestream(line);
-  	linestream >> key >> cpu;
-  	if(key == "cpu ") {
-	  jiffiesString = cpu;
-	  int space1 = jiffiesString.find(" ");
-	  string j2 = jiffiesString.substr(space1 + 1);
-	  int space2 = j2.find(" ");
-	  string j3 = jiffiesString.substr(space2 + 1);
-	  int space3 = j3.find(" ");
-	  string j4 = jiffiesString.substr(space3 + 1);
-	  int space4 = j4.find(" ");
-	  string j5 = jiffiesString.substr(space4 + 1);
-	  int space5 = j5.find(" ");
-	  string j6 = jiffiesString.substr(space5 + 1);
-	  int space6 = j6.find(" ");
-	  string j7 = jiffiesString.substr(space6 + 1);
-	  int space7 = j7.find(" ");
-	  jiffies = jiffies + stol(jiffiesString.substr(0, space1 - 1)) + stol(jiffiesString.substr(space1 + 1, space2 - 1)) + stol(jiffiesString.substr(space2 + 1, space3 - 1)) + stol(jiffiesString.substr(space5 + 1, space6 - 1)) + stol(jiffiesString.substr(space6 + 1, space7 - 1)) + stol(jiffiesString.substr(space7 + 1, jiffiesString.length()));
+  	while(std::getline(filestream, line)) {
+  	  std::istringstream linestream(line);
+  	  linestream >> cpu >> jiffiesString;
+	    //jiffiesString = cpu;
+	    int space1 = jiffiesString.find(" ");
+	    string j2 = jiffiesString.substr(space1 + 1);
+	    int space2 = j2.find(" ");
+	    string j3 = jiffiesString.substr(space2 + 1);
+	    int space3 = j3.find(" ");
+	    string j4 = jiffiesString.substr(space3 + 1);
+	    int space4 = j4.find(" ");
+	    string j5 = jiffiesString.substr(space4 + 1);
+	    int space5 = j5.find(" ");
+	    string j6 = jiffiesString.substr(space5 + 1);
+	    int space6 = j6.find(" ");
+	    string j7 = jiffiesString.substr(space6 + 1);
+	    int space7 = j7.find(" ");
+        auto cpu1 = stol(jiffiesString.substr(0, space1 - 1));
+        auto cpu2 = stol(jiffiesString.substr(space1 + 1, space2 - 1));
+        auto cpu3 = stol(jiffiesString.substr(space2 + 1, space3 - 1));
+        auto cpu6 = stol(jiffiesString.substr(space5 + 1, space6 - 1));
+        auto cpu7 = stol(jiffiesString.substr(space6 + 1, space7 - 1));
+        auto cpu8 = stol(jiffiesString.substr(space7 + 1, jiffiesString.length()));
+	    jiffies = cpu1 + cpu2 + cpu3 + cpu6 + cpu7 + cpu8;
     }
   }
   return jiffies;
@@ -182,7 +187,6 @@ long LinuxParser::ActiveJiffies() {
 // TODO: Read and return the number of idle jiffies for the system
 long LinuxParser::IdleJiffies() {
   string line;
-  string key;
   string cpu;
   string jiffiesString;
   float jiffies = 0;
@@ -190,9 +194,7 @@ long LinuxParser::IdleJiffies() {
   if(filestream.is_open()) {
     std::getline(filestream, line);
     std::istringstream linestream(line);
-    linestream >> key >> cpu;
-    if(key == "cpu ") {
-      jiffiesString = cpu;
+    linestream >> cpu >> jiffiesString;
       int space1 = jiffiesString.find(" ");
       string j2 = jiffiesString.substr(space1 + 1);
       int space2 = j2.find(" ");
@@ -202,13 +204,19 @@ long LinuxParser::IdleJiffies() {
       int space4 = j4.find(" ");
       string j5 = jiffiesString.substr(space4 + 1);
       int space5 = j5.find(" ");
-      jiffies = jiffies + stol(jiffiesString.substr(space3 + 1, space4 - 1)) + stol(jiffiesString.substr(space4 + 1, space5 - 1));
-    }
+      auto cpu4 = stol(jiffiesString.substr(space3 + 1, space4 - 1));
+      auto cpu5 = stol(jiffiesString.substr(space4 + 1, space5 - 1));
+      jiffies = cpu4 + cpu5;
   }
   return jiffies;
 }
 
-float LinuxParser::CpuUtilization() { return (float)(ActiveJiffies() + IdleJiffies()); }
+float LinuxParser::CpuUtilization() {
+    float active = ActiveJiffies();
+    float idle = IdleJiffies();
+    if (active + idle > 0.0f) { return active / (active + idle); }
+    return 0.0f;
+}
 
 // TODO: Read and return CPU utilization
 float LinuxParser::CpuUtilization(int pid) { 
@@ -278,7 +286,6 @@ string LinuxParser::Command(int pid) {
 // REMOVE: [[maybe_unused]] once you define the function
 string LinuxParser::Ram(int pid) {
   string line;
-  string key;
   string VmSize;
   string returnValue;
   std::ifstream filestream(kProcDirectory + to_string(pid) + kStatusFilename);
@@ -312,7 +319,7 @@ string LinuxParser::User(int pid) {
   string line, key, value, x, username;
   bool found{false};
   string uid = Uid(pid);
-  std::ifstream filestream(kProcDirectory + kPasswordPath);
+  std::ifstream filestream(kPasswordPath);
   if (filestream.is_open()) {
     while (std::getline(filestream, line) && !found) {
       std::replace(line.begin(), line.end(), ':', ' ');
